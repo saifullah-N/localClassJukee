@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+ binaryTargets = [ "native","debian-openssl-1.1.x"]
+ }
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model registeredusers {
+  // username String @db.VarChar(80)
+  email    String @db.VarChar(80)
+  password String @db.VarChar(80)
+
+  @@ignore
+}
+
+model PrithviUser {
+  id      Int      @id @default(autoincrement()) 
+  name    String?  @db.VarChar(255) @map("user_name")
+  email   String   @unique @db.VarChar(255)
+  password String? @db.VarChar(255)
+  refresh_token   String? @db.VarChar(255)
+
+}
+
+model  Mach1  {
+  id        Int      @id @default(autoincrement())
+  pieces    Int
+  createdAt DateTime @default(now()) @db.Timestamp(6) @map("created_at")
+}
+model  Mach2 {
+  id        Int      @id @default(autoincrement())
+  pieces    Int
+  createdAt DateTime @default(now()) @db.Timestamp(6) @map("created_at")
+}
+model  Mach3 {
+  id        Int      @id @default(autoincrement())
+  pieces    Int
+  createdAt DateTime @default(now()) @db.Timestamp(6) @map("created_at")
+}
+
+model  Mach4 {
+  id        Int      @id @default(autoincrement())
+  pieces    Int
+  createdAt DateTime @default(now()) @db.Timestamp(6) @map("created_at")
+}
+
+model  Mach5 {
+  id        Int      @id @default(autoincrement())
+  pieces    Int
+  createdAt DateTime @default(now()) @db.Timestamp(6) @map("created_at")
+}
+
+model  Mach6 {
+  id        Int      @id @default(autoincrement())
+  pieces    Int
+  createdAt DateTime @default(now()) @db.Timestamp(6) @map("created_at")
+}
