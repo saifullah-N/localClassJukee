@@ -5,20 +5,20 @@ const app = express();
 const http = require("http");
 const cors = require("cors");
 const path = require("path");
-// require('dotenv').config({ path: path.resolve(__dirname, '.env') })
+
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 const { Server } = require("socket.io");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-//server creation
+
 app.use(cors());
 const router = express.Router();
 app.use(express.json());
 app.use(router);
 app.use(cookieParser());
-app.use(express.urlencoded({extended:false}))
+app.use(express.urlencoded({ extended: false }))
 const server = http.createServer(app);
 app.use(
   cors({
@@ -53,42 +53,26 @@ const client = mqtt.connect(connectUrl, {
   reconnectPeriod: 1000,
 });
 
-// client.setMaxListeners(0);
-// io.setMaxListeners(0);
-// client.setMaxListeners(Infinity)
-//    var mArr=[]
-// io.on('connection',(socket)=>{
-//     socket.on('macno', (num) => {
-//  mArr=[]
-//         for (let i = 0; i < num; i++) {
-//             mArr.push(`mach-${i+1}`)
-//         }
-//         console.log(mArr);
-//     })
-// })
 const helmet = require("helmet");
 app.use(helmet());
+
 const compression = require("compression");
 app.use(compression());
+
 const SSE = require("express-sse");
 const sse = new SSE(["dummy data"]);
 sse.send("hello", "eventName");
+
 class Data {
   constructor(machID, db) {
     this.machID = machID;
     this.client = client;
-    // this.io = io;
     this.db = db;
     this.cron = cron;
     this.sse = sse;
   }
 
-  connection() {
-    this.client.on("connect", () => {
-      // console.log("connected");
-    });
-  }
-  subscribeTopieces() {
+  subscribeToPieces() {
     this.client.subscribe(`priv/${this.machID}/pieces`);
   }
 
@@ -96,27 +80,25 @@ class Data {
     this.client.subscribe(`priv/${this.machID}/time`);
   }
 
-  getpieces() {
-    //  this.subscribeTopieces();
-    //  this.client.subscribe(`priv/${this.machID}/pieces`);
+  listenForPieces() {
+    this.subscribeToPieces()
     this.client.on("message", (topic, payload) => {
-      //console.log("called");
-      //  console.log(topic);
-      if (topic == `priv/${this.machID}/pieces`)
-        this.pieces = payload.toString();
-      //   this.time=payload.toString()
+      if (topic == `priv/${this.machID}/pieces`) {
+        this.pieces = payload.toString()
+        sse.send(this.pieces, `${this.machID}/piece`);
+      }
     });
-    //  this.client.unsubscribe(`priv/${this.machID}/pieces`, console.log("unsubsribe"))
   }
-  getTime() {
+
+  listenForTime() {
     this.subscribeToTime();
     this.client.on("message", (topic, payload) => {
-      //  console.log("called");
-      //  console.log(topic);
-      if (topic == `priv/${this.machID}/time`) this.time = payload.toString();
+      if (topic == `priv/${this.machID}/time`) {
+        this.time = payload.toString();
+        sse.send(this.time, `${this.machID}/time`);
+      }
     });
 
-    //  this.client.unsubscribe(`priv/${this.machID}/pieces`, console.log("unsubsribe"))
   }
 
   async getReport() {
@@ -125,7 +107,6 @@ class Data {
     this.report = [];
     this.piecesNow = 0;
     const snapshot = await this.db.findMany({});
-    // console.log(snapshot)
     if (snapshot.length > 0) {
       var obj = this;
       var time = [
@@ -162,10 +143,10 @@ class Data {
             new Date(value.createdAt)
               .getHours()
               .toLocaleString("en-US", { timeZone: "Asia/Kolkata" }) +
-              ":" +
-              new Date(value.createdAt)
-                .getMinutes()
-                .toLocaleString("en-US", { timeZone: "Asia/Kolkata" }) ==
+            ":" +
+            new Date(value.createdAt)
+              .getMinutes()
+              .toLocaleString("en-US", { timeZone: "Asia/Kolkata" }) ==
             timebro
           ) {
             if (value.pieces != 0) {
@@ -178,25 +159,12 @@ class Data {
           }
         });
       });
-      // console.log(this.report);
     }
   }
 
-  // PassReacordToReact() {
-  //   this.getReport();
-  //   this.io.on("connection", (socket) => {
-  //     socket.emit("getRecord" + this.machID, this.report);
-  //     socket.on(`subscribeToRecord+${this.machID}`, (interval) => {
-  //       //console.log('client is subscribing to timer with interval ', interval);
-  //     });
-  //   });
-  // }
-  PassReacordToReactBySSE() {
-    this.getReport();
-      sse.send(this.report,`${this.machID}/report`,);
-  }
+
   storeRecord() {
-    this.getpieces();
+    this.listenForPieces();
     this.cron.schedule("30 * * * *", () => {
       if (this.pieces != null && this.pieces != undefined) {
         this.db
@@ -224,58 +192,6 @@ class Data {
     });
   }
 
-
-  // emmitpieces() {
-  //   this.io.on("connection", (socket) => {
-  //     socket.on(`subscribeTopieces+${this.machID}`, (interval) => {
-  //       setInterval(() => {
-  //         this.getpieces();
-  //         socket.emit(this.machID + "pieces", this.pieces);
-  //         //    console.log(this.machID, this.pieces);
-  //         // console.log('func:'+this.getpieces());
-  //       }, interval);
-  //     });
-  //   });
-  // }
-  emmitPiecesbySSE() {
-    // this.io.on("connection", (socket) => {
-    // socket.on(`subscribeTopieces+${this.machID}`, (interval) => {
-    setInterval(() => {
-      this.getpieces();
-      sse.send(this.pieces, `${this.machID}/piece`);
-      // socket.emit(this.machID + "pieces", this.pieces);
-      //    console.log(this.machID, this.pieces);
-      // console.log('func:'+this.getpieces());
-    }, 1000);
-    // });
-    // });
-  }
-  emmitTimebySSE() {
-    // this.io.on("connection", (socket) => {
-    // socket.on(`subscribeTopieces+${this.machID}`, (interval) => {
-    setInterval(() => {
-      this.getpieces();
-      sse.send(this.pieces, `${this.machID}/time`);
-      // socket.emit(this.machID + "pieces", this.pieces);
-      //    console.log(this.machID, this.pieces);
-      // console.log('func:'+this.getpieces());
-    }, 1000);
-    // });
-    // });
-  }
-  // emmitTime() {
-  //   this.io.on("connection", (socket) => {
-  //     socket.on(`subscribeToTime+${this.machID}`, (interval) => {
-  //       //console.log('client is subscribing to timer with interval ', interval);
-  //       setInterval(() => {
-  //         this.getTime();
-  //         socket.emit(this.machID + "time", this.time);
-  //         //    console.log(this.machID, this.pieces);
-  //         // console.log('func:'+this.getpieces());
-  //       }, interval);
-  //     });
-  //   });
-  // }
 }
 
 const m1 = new Data("mach-1", prisma.mach1);
@@ -285,41 +201,18 @@ const m4 = new Data("mach-4", prisma.mach4);
 const m5 = new Data("mach-5", prisma.mach5);
 const m6 = new Data("mach-6", prisma.mach6);
 
-m1.subscribeTopieces();
-app.get("/stream",sse.init)
-// m1.emmitPiecesbySSE()
-m2.emmitTimebySSE();
-m1.emmitTimebySSE();
-m3.emmitTimebySSE();
-m4.emmitTimebySSE();
-m5.emmitTimebySSE();
-m6.emmitTimebySSE();
-m1.emmitPiecesbySSE();
-m2.emmitPiecesbySSE();
-m3.emmitPiecesbySSE();
-m4.emmitPiecesbySSE();
-m5.emmitPiecesbySSE();
-m6.emmitPiecesbySSE();
+m1.subscribeToPieces();
+app.get("/stream", sse.init)
 
-m2.storeRecord();
-m1.storeRecord();
-m3.storeRecord();
-m4.storeRecord();
-m5.storeRecord();
-m6.storeRecord();
+const machines = [m1, m2, m3, m4, m5, m6]
+machines.map(machine => {
+  machine.listenForPieces()
+  machine.listenForTime()
+  machine.storeRecord()
+  machine.getReport()
+})
 
-m2.getReport();
-m3.getReport();
-m4.getReport();
-m5.getReport();
-m6.getReport();
 
-m1.PassReacordToReactBySSE();
-m2.PassReacordToReactBySSE();
-m3.PassReacordToReactBySSE();
-m4.PassReacordToReactBySSE();
-m5.PassReacordToReactBySSE();
-m6.PassReacordToReactBySSE();
 
 server.listen(5000, () => {
   console.log("done dude");
@@ -423,9 +316,7 @@ const Logout = async (req, res) => {
 
 const refreshToken = async (req, res) => {
   try {
-    // console.log(req.body)
     const refreshToken = req.body.refreshToken;
-    // console.log(refreshToken);
     if (!refreshToken) return res.sendStatus(401);
     const user = await prisma.PrithviUser.findMany({
       where: {
@@ -452,7 +343,6 @@ const refreshToken = async (req, res) => {
       }
     );
   } catch (error) {
-    // console.log(error);
   }
 };
 
@@ -489,24 +379,3 @@ cron.schedule(
     timezone: "Asia/Kolkata",
   }
 );
-// import express from "express";
-// import dotenv from "dotenv";
-//import cookieParser from "cookie-parser";
-// import cors from "cors";
-// import db from "./config/Database.js";
-// import router from "./routes/index.js";
-
-// const app = express();
-
-// app.use(cors({ credentials: true, origin: 'http://localhost:3000' }));
-// app.use(cookieParser());
-// app.use(express.json());
-
-// app.listen(5000, () => console.log('Server running at port 5000'));
-
-//   async function main(){await prisma.prithviUser.deleteMany({})
-// console.log('Server running at http://localhost:')}
-// main();
-// m1.cron.schedule('29 * * * *', () => {
-//     console.log("up time: " + new Date().getMinutes() )
-// })
