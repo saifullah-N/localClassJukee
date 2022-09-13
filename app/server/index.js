@@ -18,7 +18,7 @@ const router = express.Router();
 app.use(express.json());
 app.use(router);
 app.use(cookieParser());
-app.use(express.urlencoded({extended:false}))
+app.use(express.urlencoded({ extended: false }));
 const server = http.createServer(app);
 app.use(
   cors({
@@ -27,12 +27,12 @@ app.use(
     allowedHeaders: ["Authorization"],
   })
 );
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:3000",
-    methods: ["GET", "POST"],
-  },
-});
+// const io = new Server(server, {
+//   cors: {
+//     origin: "http://localhost:3000",
+//     methods: ["GET", "POST"],
+//   },
+// });
 
 //mqtt configurations
 // 182.72.162.13 9900
@@ -52,27 +52,18 @@ const client = mqtt.connect(connectUrl, {
   password: "Nuttertools@123", //'iQube@2019',
   reconnectPeriod: 1000,
 });
+client.addListener("priv/mach-1/time",(payload)=>{
+  console.log(payload.toString())
 
-// client.setMaxListeners(0);
-// io.setMaxListeners(0);
-// client.setMaxListeners(Infinity)
-//    var mArr=[]
-// io.on('connection',(socket)=>{
-//     socket.on('macno', (num) => {
-//  mArr=[]
-//         for (let i = 0; i < num; i++) {
-//             mArr.push(`mach-${i+1}`)
-//         }
-//         console.log(mArr);
-//     })
-// })
+})
+
 const helmet = require("helmet");
 app.use(helmet());
 const compression = require("compression");
 app.use(compression());
 const SSE = require("express-sse");
+const { setEngine } = require("crypto");
 const sse = new SSE(["dummy data"]);
-sse.send("hello", "eventName");
 class Data {
   constructor(machID, db) {
     this.machID = machID;
@@ -85,7 +76,7 @@ class Data {
 
   connection() {
     this.client.on("connect", () => {
-      // console.log("connected");
+       console.log("connected");
     });
   }
   subscribeTopieces() {
@@ -113,7 +104,8 @@ class Data {
     this.client.on("message", (topic, payload) => {
       //  console.log("called");
       //  console.log(topic);
-      if (topic == `priv/${this.machID}/time`) this.time = payload.toString();
+      if (topic == `priv/${this.machID}/time` && payload.toString()!=undefined) this.time = payload.toString();
+      else this.time=0
     });
 
     //  this.client.unsubscribe(`priv/${this.machID}/pieces`, console.log("unsubsribe"))
@@ -193,7 +185,7 @@ class Data {
   // }
   PassReacordToReactBySSE() {
     this.getReport();
-      sse.send(this.report,`${this.machID}/report`,);
+    sse.send(this.report, `${this.machID}/report`);
   }
   storeRecord() {
     this.getpieces();
@@ -224,7 +216,6 @@ class Data {
     });
   }
 
-
   // emmitpieces() {
   //   this.io.on("connection", (socket) => {
   //     socket.on(`subscribeTopieces+${this.machID}`, (interval) => {
@@ -240,6 +231,7 @@ class Data {
   emmitPiecesbySSE() {
     // this.io.on("connection", (socket) => {
     // socket.on(`subscribeTopieces+${this.machID}`, (interval) => {
+    this.subscribeTopieces();
     setInterval(() => {
       this.getpieces();
       sse.send(this.pieces, `${this.machID}/piece`);
@@ -253,9 +245,11 @@ class Data {
   emmitTimebySSE() {
     // this.io.on("connection", (socket) => {
     // socket.on(`subscribeTopieces+${this.machID}`, (interval) => {
+      this.subscribeToTime();
     setInterval(() => {
-      this.getpieces();
-      sse.send(this.pieces, `${this.machID}/time`);
+      this.getTime();
+      // console.log(this.time)
+      sse.send(this.time, `${this.machID}/time`);
       // socket.emit(this.machID + "pieces", this.pieces);
       //    console.log(this.machID, this.pieces);
       // console.log('func:'+this.getpieces());
@@ -285,8 +279,8 @@ const m4 = new Data("mach-4", prisma.mach4);
 const m5 = new Data("mach-5", prisma.mach5);
 const m6 = new Data("mach-6", prisma.mach6);
 
-m1.subscribeTopieces();
-app.get("/stream",sse.init)
+app.get('/stream', (req, res) => {
+  sse.init(req,res)});
 // m1.emmitPiecesbySSE()
 m2.emmitTimebySSE();
 m1.emmitTimebySSE();
@@ -320,6 +314,42 @@ m3.PassReacordToReactBySSE();
 m4.PassReacordToReactBySSE();
 m5.PassReacordToReactBySSE();
 m6.PassReacordToReactBySSE();
+
+
+// app.get('/streaming', (req, res) => {
+
+//     res.setHeader('Cache-Control', 'no-cache');
+//     res.setHeader('Content-Type', 'text/event-stream');
+//     res.setHeader('Access-Control-Allow-Origin', '*');
+//     res.setHeader('Connection', 'keep-alive');
+//     res.flushHeaders(); // flush the headers to establish SSE with client
+
+//     let counter = 0;
+//     let interValID = setInterval(() => {
+//         counter++;
+//         if (counter >= 10) {
+//             clearInterval(interValID);
+//             res.end(); // terminates SSE session
+//             return;
+//         }
+//         res.write(`data: ${JSON.stringify({num: counter})}\n\n`); // res.write() instead of res.send()
+//     }, 1000);
+
+//     // If client closes connection, stop sending events
+//     res.on('close', () => {
+//         console.log('client dropped me');
+//         clearInterval(interValID);
+//         res.end();
+//     });
+// });
+
+client.on('message',()=>{
+  console.log("m1:",m1.time)
+  sse.send([parseInt(m1.pieces),parseInt(m2.pieces),parseInt(m3.pieces),parseInt(m4.pieces),parseInt(m5.pieces),parseInt(m6.pieces)],"piecesGraph")
+  sse.send([parseInt(m1.time),parseInt(m2.time),parseInt(m3.time),parseInt(m4.time),parseInt(m5.time),parseInt(m6.time)],"timeGraph")}
+}
+)
+
 
 server.listen(5000, () => {
   console.log("done dude");

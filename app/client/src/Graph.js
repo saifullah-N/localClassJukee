@@ -19,8 +19,8 @@ ChartJS.register(
     Tooltip,
     Legend
 );
-
-function Graph({graphData ,label}) {   
+function Graph({label}) {  
+    const sse =new EventSource("http://localhost:5000/stream")
     function saveCanvas() {
         //save to png
         const canvasSave = document.getElementById(label);
@@ -58,27 +58,28 @@ function Graph({graphData ,label}) {
         },
     };
 
-  function graphSetter(){ setInterval(() => {
-
-
-        const plotData = _.map(graphData,label);
-        plotData.map((t) => {
-            if (t === null || t === NaN)
-                t = 0
-        })
-        const labels = _.map(graphData, "machID")
+  function graphSetter(data){ 
+        // const plotData = data;
+        const labels = [
+          "mach-1",
+          "mach-2",
+          "mach-3",
+          "mach-4",
+          "mach-5",
+          "mach-6",
+        ];
 
         // pieces.map((p) => {
         //     if (p === null || p === NaN)
         //         p = 0
-        // })
+        // })S
         const defineData = {
 
             labels: labels,
             datasets: [
                 {
                     label: label,
-                    data: plotData,
+                    data: data,
                     backgroundColor: "rgba(255, 99, 132, 0.5)",
                 }
                 // {
@@ -89,14 +90,26 @@ function Graph({graphData ,label}) {
             ],
         }
         setData(defineData)
-    }, 1000)
+    
 }
 
 
-    useEffect( () => {
-        graphSetter()
-    }, [setData, graphSetter])
-    
+  useEffect(() => {
+    // console.log(sse.readyState)
+    sse.addEventListener(`${label}Graph`, (e) => {
+    console.log(JSON.parse(e.data));
+        // console.log("event");
+      if (e.data != undefined && e.data !== null)
+        graphSetter((JSON.parse(e.data)));
+        // graphSetter([1,2,3,4,5,6])
+      else graphSetter([0,0,0,0,0,0]);
+    });
+    sse.onerror = () => {
+      sse.close();
+    };
+  });
+
+ 
     return (
         <>
 

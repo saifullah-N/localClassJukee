@@ -1,8 +1,8 @@
 
 import React, { useEffect,useState } from 'react'
-import openSocket from 'socket.io-client';
-var socket = openSocket("http://localhost:5000")
-
+// import openSocket from 'socket.io-client';
+// var socket = openSocket("http://localhost:5000")
+// import sse from "./EventSource";
 function RecordRow({machID}) {
 
     // function getRecord(cb) {
@@ -15,10 +15,10 @@ function RecordRow({machID}) {
         setTime(record)}
         setTime([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0,0])
     }
+     const sse = new EventSource("http://localhost:5000/stream", {
+       withCredentials: true,
+     });
   useEffect(() => {
-    const sse = new EventSource("http://localhost:5000/stream", {
-      withCredentials: true,
-    });
     //  sse.onmessage = (e) => getRealtimeData(JSON.parse(e.data));
     sse.addEventListener(`${machID}/record`, (e) => {
       getRecord(JSON.parse(e.data));

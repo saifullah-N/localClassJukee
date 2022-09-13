@@ -11,8 +11,8 @@ import PiecesRow from './PiecesRow';
 import Graph from './Graph';
 import _ from 'lodash';
 import RecordRow from './RecordRow';
-import openSocket from 'socket.io-client';
-var socket = openSocket("http://localhost:5000")
+// import openSocket from 'socket.io-client';
+// var socket = openSocket("http://localhost:5000")
 
 const Dashboard = () => {
     const [name, setName] = useState('');
@@ -20,7 +20,6 @@ const Dashboard = () => {
     const [expire, setExpire] = useState('');
     const [users, setUsers] = useState([]);
     const history = useNavigate();
-    // axios.defaults.withCredentials = true;
     const [status ,setStatus] = useState()
     const location = useLocation()
     useEffect(() => {
@@ -83,14 +82,15 @@ const Dashboard = () => {
         peiceData[index] = machineData
 
     }
-    async function PushTimeData(peicedata, index) {
-        timeData[index] = peicedata
+    function PushTimeData(data, index) {
+    // console.table(data)
+        timeData[index] = data
 
     }
     useEffect(() => {
         setInterval(() => {
+      setGraphDataTime(timeData)
 
-            setGraphDataTime(timeData)
             if (graphDataTime.length == 0) {
                 setGraphDataTime(DefaultTimedata)
             }
@@ -98,9 +98,9 @@ const Dashboard = () => {
             if (graphDatapieces.length == 0) {
                 setGraphDatapieces(DefaultPeicedata)
             }
-
+        //  console.log(graphDataTime)
         }
-            , 4000)
+            , 1000)
 
 
     }, [setGraphDatapieces, setGraphDataTime]);
@@ -173,13 +173,13 @@ const Dashboard = () => {
             <div className='col-md-6'>
                 <div className='part'>
                     
-                    <Graph graphData={graphDataTime} label="time"></Graph>
+                    <Graph  label="time"></Graph>
                     </div>
                     </div>
             
             <div className='col-md-6'>
                 <div className='part'>
-            <Graph graphData={graphDatapieces} label="pieces"></Graph>
+            <Graph  label="pieces"></Graph>
 
                 </div>
                 </div>

@@ -12,6 +12,7 @@ function Test() {
          }
         //  sse.onmessage = (e) => getRealtimeData(JSON.parse(e.data));
          sse.addEventListener("mach-1/piece", (e) => {
+          console.log(e.data)
            setTest(JSON.parse(e.data));
          });
          sse.onerror = () => {

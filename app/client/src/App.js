@@ -19,12 +19,6 @@ function App() {
             </>
           }
         />
-        <Route
-          path="test"
-          element={
-            <TimeRow  machID="mach-1"></TimeRow>
-          }
-        />
       </Routes>
     </BrowserRouter>
   );
