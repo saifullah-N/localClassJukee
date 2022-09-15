@@ -222,12 +222,13 @@ const Dashboard = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        <RecordRow machID="mach-1" />
+                        <RecordRow/>
+                        {/* <RecordRow machID="mach-1" />
                         <RecordRow machID="mach-2" />
                         <RecordRow machID="mach-3" />
                         <RecordRow machID="mach-4" />
                         <RecordRow machID="mach-5" />
-                        <RecordRow machID="mach-6" />
+                        <RecordRow machID="mach-6" /> */}
                     </tbody>
                 </Table>
            

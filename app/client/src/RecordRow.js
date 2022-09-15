@@ -1,50 +1,68 @@
 
 import React, { useEffect,useState } from 'react'
-// import openSocket from 'socket.io-client';
-// var socket = openSocket("http://localhost:5000")
-// import sse from "./EventSource";
-function RecordRow({machID}) {
+import axios from 'axios';
+function RecordRow() {
 
-    // function getRecord(cb) {
-    //     socket.on("getRecord"+machID, (record) => cb(record));
-    //     socket.emit(`subscribeToRecord+${machID}`);
-    // }
-    const[time, setTime] = useState([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
-    function   getRecord(record){
-       if(record.length != 0) {
-        setTime(record)}
-        setTime([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0,0])
-    }
-     const sse = new EventSource("http://localhost:5000/stream", {
-       withCredentials: true,
-     });
-  useEffect(() => {
-    //  sse.onmessage = (e) => getRealtimeData(JSON.parse(e.data));
-    sse.addEventListener(`${machID}/record`, (e) => {
-      getRecord(JSON.parse(e.data));
-    });
-    sse.onerror = () => {
-      // error log here
+    const [pieces, setPieces] = useState([
+      {
+        machID: "mach-1",
+        report: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      },
+      {
+        machID: "mach-2",
+        report: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      },
+      {
+        machID: "mach-3",
+        report: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      },
+      {
+        machID: "mach-4",
+        report: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      },
+      {
+        machID: "mach-5",
+        report: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      },
+      {
+        machID: "mach-6",
+        report: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      },
+    ]);
 
-      sse.close();
+//  const getRecord=()=>{  
+//   sse.addEventListener(`${machID}/report`, (e) => {
+//     console.log(JSON.parse(e.data));
+//    setPieces(JSON.parse(e.data));
+//  });
+//     sse.onerror = () => {
+//       sse.close();
+//     };
+//     return () => {
+//       sse.close();
+//     }}
+//     getRecord()
+//   });
+    const getUsers = async () => {
+      const response = await axios.get("http://localhost:5000/report",);
+      setPieces(response.data);
     };
-    return () => {
-      sse.close();
-    };
+useEffect(() => {
+getUsers()
   });
-  return (
-      <tr>
-        <td key={machID}>{machID}</td>
+return (
+  pieces.map((piece)=>{ 
+        <tr>
+        <td >{piece.machID}</td>
      {
-
-        time.map((value)=>{
-            // console.log(value)   
+        piece.report.map((value)=>{  
             return <td key={Math.floor(Math.random() *5000).toString()}>{value}</td>
         })
         
     }
-      </tr>
+      </tr>}
   )
+)
 }
 
 export default RecordRow

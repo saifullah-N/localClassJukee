@@ -4,7 +4,6 @@ import Login from "./Login";
 import Navbar from "./Navbar";
 import Register from "./Register";
 import Test from "./Test";
-import TimeRow from "./TimeRow";
 function App() {
   return (
     <BrowserRouter>
@@ -19,6 +18,7 @@ function App() {
             </>
           }
         />
+        <Route path="/test" element={<Test/>}/>
       </Routes>
     </BrowserRouter>
   );
