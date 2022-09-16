@@ -3,8 +3,6 @@ import Dashboard from "./Dashboard";
 import Login from "./Login";
 import Navbar from "./Navbar";
 import Register from "./Register";
-import Test from "./Test";
-import TimeRow from "./TimeRow";
 function App() {
   return (
     <BrowserRouter>

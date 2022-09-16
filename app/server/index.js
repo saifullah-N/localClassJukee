@@ -5,14 +5,13 @@ const app = express();
 const http = require("http");
 const cors = require("cors");
 const path = require("path");
-
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
-const { Server } = require("socket.io");
+
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-
+const SSE = require("express-sse");
 app.use(cors());
 const router = express.Router();
 app.use(express.json());
@@ -27,40 +26,34 @@ app.use(
     allowedHeaders: ["Authorization"],
   })
 );
-// const io = new Server(server, {
-//   cors: {
-//     origin: "http://localhost:3000",
-//     methods: ["GET", "POST"],
-//   },
-// });
-
-//mqtt configurations
-// 182.72.162.13 9900
-
-// Nuttertools @123
-const host = "182.72.162.13"; //'10.1.75.125'
-const port = "9900"; //'2123'//'2123'
+const host = "182.72.162.13";
+const port = "9900";
 const clientId = `mqtt_${Math.random().toString(16).slice(3)}`;
 
 const connectUrl = `mqtt://${host}:${port}`;
-// creating mqtt client
+
 const client = mqtt.connect(connectUrl, {
   clientId,
   clean: true,
   connectTimeout: 4000,
   username: "iqube",
-  password: "Nuttertools@123", //'iQube@2019',
+  password: "Nuttertools@123",
   reconnectPeriod: 1000,
+});
+app.get("/stream", (req, res) => {
+  sse.init(req, res);
+});
+client.on("connect", () => {
+  console.log("connected");
 });
 
 const helmet = require("helmet");
 app.use(helmet());
 
 const compression = require("compression");
+const { response } = require("express");
 app.use(compression());
-
-const SSE = require("express-sse");
-const { setEngine } = require("crypto");
+// const { setEngine } = require("crypto");
 const sse = new SSE(["dummy data"]);
 class Data {
   constructor(machID, db) {
@@ -80,10 +73,10 @@ class Data {
   }
 
   listenForPieces() {
-    this.subscribeToPieces()
+    this.subscribeToPieces();
     this.client.on("message", (topic, payload) => {
       if (topic == `priv/${this.machID}/pieces`) {
-        this.pieces = payload.toString()
+        this.pieces = payload.toString();
         sse.send(this.pieces, `${this.machID}/piece`);
       }
     });
@@ -97,11 +90,9 @@ class Data {
         sse.send(this.time, `${this.machID}/time`);
       }
     });
-
   }
 
   async getReport() {
-    // Get a database reference to our posts
     this.data = 0;
     this.report = [];
     this.piecesNow = 0;
@@ -142,10 +133,10 @@ class Data {
             new Date(value.createdAt)
               .getHours()
               .toLocaleString("en-US", { timeZone: "Asia/Kolkata" }) +
-            ":" +
-            new Date(value.createdAt)
-              .getMinutes()
-              .toLocaleString("en-US", { timeZone: "Asia/Kolkata" }) ==
+              ":" +
+              new Date(value.createdAt)
+                .getMinutes()
+                .toLocaleString("en-US", { timeZone: "Asia/Kolkata" }) ==
             timebro
           ) {
             if (value.pieces != 0) {
@@ -157,10 +148,10 @@ class Data {
             }
           }
         });
-      });
+      })
     }
+    return this.report
   }
-
 
   storeRecord() {
     this.listenForPieces();
@@ -200,19 +191,12 @@ const m4 = new Data("mach-4", prisma.mach4);
 const m5 = new Data("mach-5", prisma.mach5);
 const m6 = new Data("mach-6", prisma.mach6);
 
-app.get("/stream", (req, res) => {
-  sse.init(req, res);
+const machines = [m1, m2, m3, m4, m5, m6];
+machines.map((machine) => {
+  machine.listenForPieces();
+  machine.listenForTime();
+  machine.storeRecord();
 });
-
-const machines = [m1, m2, m3, m4, m5, m6]
-machines.map(machine => {
-  machine.listenForPieces()
-  machine.listenForTime()
-  machine.storeRecord()
-  machine.getReport()
-})
-
-
 
 server.listen(5000, () => {
   console.log("done dude");
@@ -342,8 +326,7 @@ const refreshToken = async (req, res) => {
         res.json({ accessToken });
       }
     );
-  } catch (error) {
-  }
+  } catch (error) {}
 };
 
 const verifyToken = (req, res, next) => {
@@ -358,11 +341,26 @@ const verifyToken = (req, res, next) => {
     next();
   });
 };
+const sendReport = async (req,res)=>{ try {
+    let id = req.params.machine
+   let data = await machines[(id.slice(id.length - 1)) - 1].getReport();
+    res.send(data)
+  } catch (error) {
+    console.log(error);
+  }
+};
+           
+client.on('message',()=>{
+ 
+  sse.send([parseInt(m1.pieces),parseInt(m2.pieces),parseInt(m3.pieces),parseInt(m4.pieces),parseInt(m5.pieces),parseInt(m6.pieces)],"piecesGraph")
+  sse.send([parseInt(m1.time),parseInt(m2.time),parseInt(m3.time),parseInt(m4.time),parseInt(m5.time),parseInt(m6.time)],"timeGraph")}
+)          
 router.get("/users", verifyToken, getUsers);
 router.post("/users", Register);
 router.post("/login", Login);
 router.post("/token", refreshToken);
 router.delete("/logout", Logout);
+router.post("/report/:machine", sendReport);
 cron.schedule(
   "0 0 * * *",
   async () => {

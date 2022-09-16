@@ -20,14 +20,15 @@ const Dashboard = () => {
     const [expire, setExpire] = useState('');
     const [users, setUsers] = useState([]);
     const history = useNavigate();
-    const [status ,setStatus] = useState()
     const location = useLocation()
     useEffect(() => {
-        setStatus(location.state)
-        status == "login" ? getUsers() : console.log(location.state)
-        status == "login" ? refreshToken() : console.log(location.state)
-}
-    , []);
+        location.state == "login" ? getUsers() : console.log(location.state)
+        location.state == "login" ? refreshToken() : console.log(location.state)
+        if(location.state== null){
+                     if(!localStorage.getItem["auth"])
+                            history("/")
+        }
+}, []);
 
     const refreshToken = async () => {
         try {
@@ -41,6 +42,7 @@ const Dashboard = () => {
         } catch (error) {
             if (error.response) {
                 history("/");
+             
             }
         }
     }
