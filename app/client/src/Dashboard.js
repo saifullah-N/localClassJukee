@@ -20,14 +20,15 @@ const Dashboard = () => {
     const [expire, setExpire] = useState('');
     const [users, setUsers] = useState([]);
     const history = useNavigate();
-    const [status ,setStatus] = useState()
     const location = useLocation()
     useEffect(() => {
-        setStatus(location.state)
-        status == "login" ? getUsers() : console.log(location.state)
-        status == "login" ? refreshToken() : console.log(location.state)
-}
-    , []);
+        location.state == "login" ? getUsers() : console.log(location.state)
+        location.state == "login" ? refreshToken() : console.log(location.state)
+        if(location.state== null){
+                     if(!localStorage.getItem["auth"])
+                            history("/")
+        }
+}, []);
 
     const refreshToken = async () => {
         try {
@@ -41,6 +42,7 @@ const Dashboard = () => {
         } catch (error) {
             if (error.response) {
                 history("/");
+             
             }
         }
     }
@@ -222,13 +224,12 @@ const Dashboard = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        <RecordRow/>
-                        {/* <RecordRow machID="mach-1" />
+                        <RecordRow machID="mach-1" />
                         <RecordRow machID="mach-2" />
                         <RecordRow machID="mach-3" />
                         <RecordRow machID="mach-4" />
                         <RecordRow machID="mach-5" />
-                        <RecordRow machID="mach-6" /> */}
+                        <RecordRow machID="mach-6" />
                     </tbody>
                 </Table>
            

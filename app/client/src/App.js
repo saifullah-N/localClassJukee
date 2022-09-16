@@ -3,7 +3,6 @@ import Dashboard from "./Dashboard";
 import Login from "./Login";
 import Navbar from "./Navbar";
 import Register from "./Register";
-import Test from "./Test";
 function App() {
   return (
     <BrowserRouter>
@@ -18,7 +17,6 @@ function App() {
             </>
           }
         />
-        <Route path="/test" element={<Test/>}/>
       </Routes>
     </BrowserRouter>
   );

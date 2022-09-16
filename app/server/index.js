@@ -87,7 +87,6 @@ class Data {
     this.client.on("message", (topic, payload) => {
       if (topic == `priv/${this.machID}/time`) {
         this.time = payload.toString();
-        console.log("data", payload.toString());
         sse.send(this.time, `${this.machID}/time`);
       }
     });
@@ -150,15 +149,8 @@ class Data {
           }
         });
       })
-    // sse.send(
-    //   [
-    //     10, 20, 10, 20, 10, 1, 10, 3, 3, 4, 3, 4, 3, 3, 4, 3, 20, 3, 2, 40, 2,
-    //     2, 20,
-    //   ],
-    //   `${this.machID}/report`
-    // );
-    return this.report
     }
+    return this.report
   }
 
   storeRecord() {
@@ -190,10 +182,6 @@ class Data {
     });
   }
 
-  PassReacordToReact() {
-    this.getReport();
-    return [10, 20, 10, 20, 10, 1, 10, 3, 3, 4, 3, 4, 3, 3, 4, 3, 20, 3, 2, 40, 2, 2, 20]
-  }
 }
 
 const m1 = new Data("mach-1", prisma.mach1);
@@ -353,26 +341,26 @@ const verifyToken = (req, res, next) => {
     next();
   });
 };
-
-const sendReport =async (req,res)=>{
-let response=[]
-    machines.forEach(async (machine)=>{
-     await machine.getReport().then((r)=>{
-        response[parseInt((machine.machID.slice(machine.machID.length - 1)) - 1)]={machID:machine.machID,report:r}
-        if(response.length==6) 
-            return  res.json(response)
-     })
-
-    }) 
+const sendReport = async (req,res)=>{ try {
+    let id = req.params.machine
+   let data = await machines[(id.slice(id.length - 1)) - 1].getReport();
+    res.send(data)
+  } catch (error) {
+    console.log(error);
+  }
+};
            
-          
-}
+client.on('message',()=>{
+ 
+  sse.send([parseInt(m1.pieces),parseInt(m2.pieces),parseInt(m3.pieces),parseInt(m4.pieces),parseInt(m5.pieces),parseInt(m6.pieces)],"piecesGraph")
+  sse.send([parseInt(m1.time),parseInt(m2.time),parseInt(m3.time),parseInt(m4.time),parseInt(m5.time),parseInt(m6.time)],"timeGraph")}
+)          
 router.get("/users", verifyToken, getUsers);
-router.get("/report",sendReport)
 router.post("/users", Register);
 router.post("/login", Login);
 router.post("/token", refreshToken);
 router.delete("/logout", Logout);
+router.post("/report/:machine", sendReport);
 cron.schedule(
   "0 0 * * *",
   async () => {
